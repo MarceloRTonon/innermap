@@ -23,10 +23,10 @@ You can install the development version from
 devtools::install_github("MarceloRTonon/innermap")
 ```
 
-thus I need to do a matrice of R and demand that I use list to hold
-multiples matrices
 
 ## Example
+
+Making an simple example:
 
 ``` r
 library(innermap)
