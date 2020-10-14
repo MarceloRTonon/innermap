@@ -11,7 +11,7 @@ The `innermap` package presents the `innermap` family functions. These
 in turn, allow the use of map family function but using elements of the
 same vectors. This is not the same thing of `purrr::accumulate`
 function, since it does not uses any output made by the function in the
-process. Let’s see an example:
+process.
 
 ## Installation
 
