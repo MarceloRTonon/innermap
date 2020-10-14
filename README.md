@@ -1,0 +1,161 @@
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+# innermap
+
+<!-- badges: start -->
+
+<!-- badges: end -->
+
+The `innermap` package presents the `innermap` family functions. These
+in turn, allow the use of map family function but using elements of the
+same vectors. This is not the same thing of `purrr::accumulate`
+function, since it does not uses any output made by the function in the
+process. Let’s see an example:
+
+## Installation
+
+You can install the released version of innermap from
+[CRAN](https://CRAN.R-project.org) with:
+
+``` r
+install.packages("innermap")
+```
+
+And the development version from [GitHub](https://github.com/) with:
+
+``` r
+# install.packages("devtools")
+devtools::install_github("MarceloRTonon/innermap")
+```
+
+thus I need to do a matrice of R and demand that I use list to hold
+multiples matrices
+
+## Example
+
+``` r
+library(innermap)
+```
+
+``` r
+inputVec <- c(1:30)
+
+inputVec
+#>  [1]  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25
+#> [26] 26 27 28 29 30
+```
+
+Now suppose you want to sum every element of the `inputVec` vector with
+the following one. Using `base r` you would have to do:
+
+``` r
+outputVec <- vector(mode = "double",
+                    length = (length(inputVec)-1)
+                    )
+
+for(i in seq_along(inputVec)){
+  outputVec[i] <- inputVec[i] + inputVec[i+1]
+}
+
+outputVec
+#>  [1]  3  5  7  9 11 13 15 17 19 21 23 25 27 29 31 33 35 37 39 41 43 45 47 49 51
+#> [26] 53 55 57 59 NA
+```
+
+As we know, using `for` in R is neither very optimized or a good
+practice. It is possible to do this using the `purrr` package:
+
+``` r
+library(purrr)
+
+outputVec <- purrr::map2_dbl(c(1:(length(inputVec)-1)),
+                     c(2:length(inputVec)),
+                     function(x,y) inputVec[x] + inputVec[y])
+
+outputVec
+#>  [1]  3  5  7  9 11 13 15 17 19 21 23 25 27 29 31 33 35 37 39 41 43 45 47 49 51
+#> [26] 53 55 57 59
+```
+
+But one can easily argue that writing explicitly the lengths of the
+vector in the arguments is at least very anoying, when very confusing to
+read. The `innermap` approach do the same thing that was done in the
+example prior, but in the backstage. Let’s use `innermap_dbl` in this
+example:
+
+``` r
+
+outputVec <- innermap::innermap_dbl(inputVec, function(x,y) x+y)
+
+outputVec
+#>  [1]  3  5  7  9 11 13 15 17 19 21 23 25 27 29 31 33 35 37 39 41 43 45 47 49 51
+#> [26] 53 55 57 59
+```
+
+It is undoubtely more pratical to do this than it is to do the former
+way. This also allows you to be even more pratical:
+
+``` r
+
+outputVec <- innermap::innermap_dbl(inputVec, sum)
+outputVec <- innermap::innermap_dbl(inputVec, `+`)
+```
+
+# Changing the distance between the elements used
+
+In this case, we used each element with the following one, **but** we
+can also use it with different distances, using the argument `distance`.
+Supposing we want to multiply the `n` element with the `n+2` element we
+can do:
+
+``` r
+
+outputVec2 <- innermap::innermap_dbl(inputVec, `*`, distance = 2)
+
+outputVec2
+#>  [1]   3   8  15  24  35  48  63  80  99 120 143 168 195 224 255 288 323 360 399
+#> [20] 440 483 528 575 624 675 728 783 840
+```
+
+The default distance between the elements is set to be one.
+
+# A whole family
+
+We used until now the `innermap_dbl` function, but in the same way we
+have `map`, `map_lgl`, `map_chr`,`map_int`, `map_raw`, `map_dfr`,
+`map_dfc` there is a `innermap`, `innermap_lgl`,
+`innermap_chr`,`innermap_int`, `innermap_dbl`, `innermap_raw`,
+`innermap_dfr`, `innermap_dfc`.
+
+## Motivation
+
+There is no native function in `purrr` that takes elements of the same
+vector or list and applies a function to them. As a researcher in the
+field of Structural Decomposition Analysis (SDA), I use a purrr::map
+quite often, and need quite often functions like the ones from
+`innermap` family. Since the Input-Output tables are quite heavy, there
+is no way one can give up the use of the optimized `purrr` functions.
+Also, the SDA methodology needs as input the original matrix, making
+functions like `accumulate` not suited for this.
+
+I hope other will find this useful too\! Really hope to receive comments
+about it\!
+
+# Thanks
+
+Big thanks to [pedroocava](https://github.com/pedrocava/) and
+[kimjoaoun](https://github.com/kimjoaoun/) for their early comments on
+this matter. Any mistakes are my own.
+
+# Important to note
+
+As I am an Economics PhD Student, I do not have the time, nor the
+skills, to make a hardcore low level coding in C++ to create super fast
+functions as is in the `purrr` package. Nonetheless, I still think this
+functions I presented perfom quite well, since I kept them simple and
+based in the `purrr` package. I already set an
+[issue](https://github.com/tidyverse/purrr/issues/797#issue-721645404)
+in the `purrr` Github repository today. If they add this feature in the
+`purrr` package, **what I hope they do**, I will not take this project
+forward or update it in anyway.
