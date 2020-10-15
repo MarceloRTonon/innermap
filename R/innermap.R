@@ -21,6 +21,18 @@
 #'    * innermap returns a list with the lenght equals  of the input minus the distance argument..
 #'    * innermap_lgl, innermap_dbl, innermap_int, innermap_chr and innermpa_raw return a atomic vector the type of the pronoun, with the lenght equals of the input minus the distance argument.
 #'    * innermap_dfr and innermap_dfc returns a data.frame
+#'
+#' @examples
+#'
+#' inputVec <- 1:30
+#'
+#' outputVec <- innermap(inputVec, ~ `+`)
+#'
+#' outputVec2 <- innermap_dbl(inputVec,
+#'                            distance = 3,
+#'                            function(x,y) x * y)
+#'
+#' crzletters <- innermap_chr(letters, distance =1, paste0)
 #' @export
 #'
 #'

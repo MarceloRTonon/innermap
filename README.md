@@ -23,7 +23,6 @@ You can install the development version from
 devtools::install_github("MarceloRTonon/innermap")
 ```
 
-
 ## Example
 
 Making an simple example:

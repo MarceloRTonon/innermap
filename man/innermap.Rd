@@ -52,3 +52,15 @@ innermap_dfc(input, .f0, distance = 1)
 \description{
 The innermap function applies a function to a list or atomic vectors using its two of their elements in sequence as input. It is different from purrr::accumulate since it does not use any of its output as an input.
 }
+\examples{
+
+inputVec <- 1:30
+
+outputVec <- innermap(inputVec, ~ `+`)
+
+outputVec2 <- innermap_dbl(inputVec,
+                           distance = 3,
+                           function(x,y) x * y)
+
+crzletters <- innermap_chr(letters, distance =1, paste0)
+}

@@ -18,7 +18,7 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 <!-- badges: end -->
 
-The `innermap` package presents the `innermap` family functions. These in turn, allow the use of map family function but using elements of the same vectors. This is not the same thing of `purrr::accumulate` function, since it does not uses any output made by the function in the process. Let's see an example:
+The `innermap` package presents the `innermap` family functions. These in turn, allow the use of map family function but using elements of the same vectors. This is not the same thing of `purrr::accumulate` function, since it does not uses any output made by the function in the process.
 
 ## Installation
 
@@ -30,10 +30,10 @@ devtools::install_github("MarceloRTonon/innermap")
 ```
 
 
-thus I need to do a matrice of R and demand that I use list to hold multiples matrices
 
 ## Example
 
+Making an simple example:
 
 ```{r}
 library(innermap)
@@ -109,6 +109,7 @@ The default distance between the elements is set to be one.
 # A whole family
 
 We used until now the `innermap_dbl` function, but in the same way we have `map`, `map_lgl`, `map_chr`,`map_int`, `map_raw`, `map_dfr`, `map_dfc` there is a `innermap`, `innermap_lgl`, `innermap_chr`,`innermap_int`, `innermap_dbl`, `innermap_raw`, `innermap_dfr`, `innermap_dfc`.
+
 
 
 ## Motivation
