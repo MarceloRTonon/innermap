@@ -3,3 +3,4 @@
 .RData
 .Ruserdata
 shadow_scripts/
+*benchmark_it_all.R
