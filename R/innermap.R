@@ -37,9 +37,7 @@
 #'
 #'
 innermap <- function(input, .f0, distance = 1){
-  .output <- purrr::map2(c(1:(length(input)-distance)), c((1+distance):length(input)),
-                  function(x1,x2) rlang::exec(.f0, input[[x1]], input[[x2]])
-  )
+  .output <- purrr::map2(input, dplyr::lead(input, distance), .f0)[c(1:(length(input)-distance))]
   return(.output)
 }
 
@@ -48,9 +46,7 @@ innermap <- function(input, .f0, distance = 1){
 #' @export
 #'
 innerma_lgl <- function(input, .f0, distance = 1){
-  .output <- purrr::map2_lgl(c(1:(length(input)-distance)), c((1+distance):length(input)),
-                             function(x1,x2) rlang::exec(.f0, input[[x1]], input[[x2]])
-  )
+  .output <- purrr::map2_lgl(input, dplyr::lead(input, distance), .f0)[c(1:(length(input)-distance))]
   return(.output)
 }
 
@@ -60,10 +56,7 @@ innerma_lgl <- function(input, .f0, distance = 1){
 #'
 
 innermap_int <- function(input, .f0, distance = 1){
-  .output <- purrr::map2_int(c(1:(length(input)-distance)),
-                             c((1+distance):length(input)),
-                             function(x1,x2) rlang::exec(.f0, input[[x1]], input[[x2]])
-  )
+  .output <- purrr::map2_int(input, dplyr::lead(input, distance), .f0)[c(1:(length(input)-distance))]
   return(.output)
 }
 
@@ -73,9 +66,7 @@ innermap_int <- function(input, .f0, distance = 1){
 #'
 
 innermap_dbl <- function(input, .f0, distance = 1){
-  .output <- purrr::map2_dbl(c(1:(length(input)-distance)), c((1+distance):length(input)),
-                             function(x1,x2) rlang::exec(.f0, input[[x1]], input[[x2]])
-  )
+  .output <- purrr::map2_dbl(input, dplyr::lead(input, distance), .f0)[c(1:(length(input)-distance))]
   return(.output)
 }
 
@@ -85,9 +76,7 @@ innermap_dbl <- function(input, .f0, distance = 1){
 
 
 innermap_chr <- function(input, .f0, distance = 1){
-  .output <- purrr::map2_chr(c(1:(length(input)-distance)), c((1+distance):length(input)),
-                             function(x1,x2) rlang::exec(.f0, input[[x1]], input[[x2]])
-  )
+  .output <- purrr::map2_chr(input, dplyr::lead(input, distance), .f0)[c(1:(length(input)-distance))]
   return(.output)
 }
 
@@ -97,9 +86,7 @@ innermap_chr <- function(input, .f0, distance = 1){
 #' @export
 #'
 innermap_raw <- function(input, .f0, distance = 1){
-  .output <- purrr::map2_raw(c(1:(length(input)-distance)), c((1+distance):length(input)),
-                             function(x1,x2) rlang::exec(.f0, input[[x1]], input[[x2]])
-  )
+  .output <- purrr::map2_raw(input, dplyr::lead(input, distance), .f0)[c(1:(length(input)-distance))]
   return(.output)
 }
 
@@ -107,9 +94,7 @@ innermap_raw <- function(input, .f0, distance = 1){
 #' @export
 #'
 innermap_dfr <- function(input, .f0, distance = 1){
-  .output <- purrr::map2_dfr(c(1:(length(input)-distance)), c((1+distance):length(input)),
-                             function(x1,x2) rlang::exec(.f0, input[[x1]], input[[x2]])
-  )
+  .output <- purrr::map2_dfr(input, dplyr::lead(input, distance), .f0)[c(1:(length(input)-distance))]
   return(.output)
 }
 
@@ -119,8 +104,6 @@ innermap_dfr <- function(input, .f0, distance = 1){
 
 
 innermap_dfc <- function(input, .f0, distance = 1){
-  .output <- purrr::map2_dfc(c(1:(length(input)-distance)), c((1+distance):length(input)),
-                             function(x1,x2) rlang::exec(.f0, input[[x1]], input[[x2]])
-  )
+  .output <- purrr::map2_dfc(input, dplyr::lead(input, distance), .f0)[c(1:(length(input)-distance))]
   return(.output)
 }
