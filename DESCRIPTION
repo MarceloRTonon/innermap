@@ -11,6 +11,6 @@ LazyData: true
 RoxygenNote: 7.1.1
 Imports: 
     purrr, 
-    rlang
+    dplyr
 Suggests: 
     testthat
