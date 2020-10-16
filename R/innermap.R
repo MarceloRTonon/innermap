@@ -1,6 +1,6 @@
-#' Apply a function a list or atomic vector using its two elements each time
+#' Apply a function to a list or atomic vector using its two elements each time
 #'
-#' The innermap function applies a function to a list or atomic vectors using its two of their elements in sequence as input. It is different from purrr::accumulate since it does not use any of its output as an input.
+#' The innermap function applies a function to a list or atomic vectors using its two of their elements in sequence as input. It is different from purrr::accumulate() since it does not use any of its output as an input. Although the innermap family accepts atomic as inputs, the use of the innerApply() function is way more faster.
 #'
 #' @param input A list or atomic vector.
 #' @param .f0 A function, formula, or vector (not necessarily atomic)
@@ -16,6 +16,8 @@
 #'    This syntax allows you to create very compact anonymous functions. Note that formula functions conceptually take dots (that's why you can use `..1` etc). They silently ignore additional arguments that are not used in the formula expression.
 #' @param distance The distance between each element of the vector. The default value is 1.
 #'
+#' @seealso [innerApply()] for applying a function to sequentional elements of an atomic vector, is way more faster than any element of the innermap family.
+#'
 #'
 #' @return
 #'    * innermap returns a list with the lenght equals  of the input minus the distance argument..
@@ -24,20 +26,40 @@
 #'
 #' @examples
 #'
-#' inputVec <- 1:30
+#' library(plyr)
+#' library(magrittr)
 #'
-#' outputVec <- innermap(inputVec, ~ `+`)
+#' # Making cell to cell operations
 #'
-#' outputVec2 <- innermap_dbl(inputVec,
-#'                            distance = 3,
-#'                            function(x,y) x * y)
+#' plyr::alply(ozone, 3) %>%
+#' innermap(`/`)
 #'
-#' crzletters <- innermap_chr(letters, distance =1, paste0)
+#'
+#' # Making logical operations for the matrices as a
+#' # whole and returning a logical vector
+#'
+#' plyr::alply(ozone,3) %>%
+#' innermap_lgl(identical)
+#'
+#' # Making logical operations for the matrices elements
+#' # and creating a data frame by column-binding it.
+#'
+#' plyr::alply(ozone, 3, colMeans) %>%
+#' innermap(function(x,y) x <= y)
+#'
+#' # Using all.equal for the matrices and returning a character vector.
+#'
+#' plyr::alply(ozone, 3) %>%
+#' innermap_chr(function(x,y) all.equal(x,y)[1], distance =2)
+#'
+#'
 #' @export
 #'
 #'
 innermap <- function(input, .f0, distance = 1){
-  .output <- purrr::map2(input, dplyr::lead(input, distance), .f0)[c(1:(length(input)-distance))]
+  .output <- purrr::map2(input[c(1:(length(input)-distance))],
+                         input[c((1+distance):length(input))],
+                         .f0)
   return(.output)
 }
 
@@ -45,8 +67,10 @@ innermap <- function(input, .f0, distance = 1){
 #' @rdname innermap
 #' @export
 #'
-innerma_lgl <- function(input, .f0, distance = 1){
-  .output <- purrr::map2_lgl(input, dplyr::lead(input, distance), .f0)[c(1:(length(input)-distance))]
+innermap_lgl <- function(input, .f0, distance = 1){
+  .output <- purrr::map2_lgl(input[c(1:(length(input)-distance))],
+                             input[c((1+distance):length(input))],
+                             .f0)
   return(.output)
 }
 
@@ -56,7 +80,9 @@ innerma_lgl <- function(input, .f0, distance = 1){
 #'
 
 innermap_int <- function(input, .f0, distance = 1){
-  .output <- purrr::map2_int(input, dplyr::lead(input, distance), .f0)[c(1:(length(input)-distance))]
+  .output <- purrr::map2_int(input[c(1:(length(input)-distance))],
+                             input[c((1+distance):length(input))],
+                             .f0)
   return(.output)
 }
 
@@ -66,7 +92,9 @@ innermap_int <- function(input, .f0, distance = 1){
 #'
 
 innermap_dbl <- function(input, .f0, distance = 1){
-  .output <- purrr::map2_dbl(input, dplyr::lead(input, distance), .f0)[c(1:(length(input)-distance))]
+  .output <- purrr::map2_dbl(input[c(1:(length(input)-distance))],
+                             input[c((1+distance):length(input))],
+                             .f0)
   return(.output)
 }
 
@@ -76,7 +104,9 @@ innermap_dbl <- function(input, .f0, distance = 1){
 
 
 innermap_chr <- function(input, .f0, distance = 1){
-  .output <- purrr::map2_chr(input, dplyr::lead(input, distance), .f0)[c(1:(length(input)-distance))]
+  .output <- purrr::map2_chr(input[c(1:(length(input)-distance))],
+                             input[c((1+distance):length(input))],
+                             .f0)
   return(.output)
 }
 
@@ -86,7 +116,9 @@ innermap_chr <- function(input, .f0, distance = 1){
 #' @export
 #'
 innermap_raw <- function(input, .f0, distance = 1){
-  .output <- purrr::map2_raw(input, dplyr::lead(input, distance), .f0)[c(1:(length(input)-distance))]
+  .output <- purrr::map2_raw(input[c(1:(length(input)-distance))],
+                             input[c((1+distance):length(input))],
+                             .f0)
   return(.output)
 }
 
@@ -94,7 +126,9 @@ innermap_raw <- function(input, .f0, distance = 1){
 #' @export
 #'
 innermap_dfr <- function(input, .f0, distance = 1){
-  .output <- purrr::map2_dfr(input, dplyr::lead(input, distance), .f0)[c(1:(length(input)-distance))]
+  .output <- purrr::map2_dfr(input[c(1:(length(input)-distance))],
+                             input[c((1+distance):length(input))],
+                             .f0)
   return(.output)
 }
 
@@ -104,6 +138,8 @@ innermap_dfr <- function(input, .f0, distance = 1){
 
 
 innermap_dfc <- function(input, .f0, distance = 1){
-  .output <- purrr::map2_dfc(input, dplyr::lead(input, distance), .f0)[c(1:(length(input)-distance))]
+  .output <- purrr::map2_dfc(input[c(1:(length(input)-distance))],
+                             input[c((1+distance):length(input))],
+                             .f0)
   return(.output)
 }

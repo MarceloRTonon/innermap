@@ -2,18 +2,18 @@
 % Please edit documentation in R/innermap.R
 \name{innermap}
 \alias{innermap}
-\alias{innerma_lgl}
+\alias{innermap_lgl}
 \alias{innermap_int}
 \alias{innermap_dbl}
 \alias{innermap_chr}
 \alias{innermap_raw}
 \alias{innermap_dfr}
 \alias{innermap_dfc}
-\title{Apply a function a list or atomic vector using its two elements each time}
+\title{Apply a function to a list or atomic vector using its two elements each time}
 \usage{
 innermap(input, .f0, distance = 1)
 
-innerma_lgl(input, .f0, distance = 1)
+innermap_lgl(input, .f0, distance = 1)
 
 innermap_int(input, .f0, distance = 1)
 
@@ -50,17 +50,38 @@ innermap_dfc(input, .f0, distance = 1)
    * innermap_dfr and innermap_dfc returns a data.frame
 }
 \description{
-The innermap function applies a function to a list or atomic vectors using its two of their elements in sequence as input. It is different from purrr::accumulate since it does not use any of its output as an input.
+The innermap function applies a function to a list or atomic vectors using its two of their elements in sequence as input. It is different from purrr::accumulate() since it does not use any of its output as an input. Although the innermap family accepts atomic as inputs, the use of the innerApply() function is way more faster.
 }
 \examples{
 
-inputVec <- 1:30
+library(plyr)
+library(magrittr)
 
-outputVec <- innermap(inputVec, ~ `+`)
+# Making cell to cell operations
 
-outputVec2 <- innermap_dbl(inputVec,
-                           distance = 3,
-                           function(x,y) x * y)
+plyr::alply(ozone, 3) \%>\%
+innermap(`/`)
 
-crzletters <- innermap_chr(letters, distance =1, paste0)
+
+# Making logical operations for the matrices as a
+# whole and returning a logical vector
+
+plyr::alply(ozone,3) \%>\%
+innermap_lgl(identical)
+
+# Making logical operations for the matrices elements
+# and creating a data frame by column-binding it.
+
+plyr::alply(ozone, 3, colMeans) \%>\%
+innermap(function(x,y) x <= y)
+
+# Using all.equal for the matrices and returning a character vector.
+
+plyr::alply(ozone, 3) \%>\%
+innermap_chr(function(x,y) all.equal(x,y)[1], distance =2)
+
+
+}
+\seealso{
+[innerApply()] for applying a function to sequentional elements of an atomic vector, is way more faster than any element of the innermap family.
 }

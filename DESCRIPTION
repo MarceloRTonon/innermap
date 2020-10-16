@@ -1,7 +1,7 @@
 Package: innermap
 Type: Package
 Title: Use map with two elements of the same vector
-Version: 0.1.0
+Version: 0.2.0
 Author: "Marcelo Tonon""
 Maintainer: Marcelo Tonon <marcelo.resende.tonon@gmail.com>
 Description: Allows you to use elements of a vector/list as inputs to a function inside purrr::map.
@@ -10,7 +10,8 @@ Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.1.1
 Imports: 
-    purrr, 
-    dplyr
-Suggests: 
-    testthat
+    purrr
+Suggests:
+    plyr,
+    testthat,
+    magrittr

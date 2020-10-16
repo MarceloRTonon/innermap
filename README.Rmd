@@ -122,6 +122,8 @@ I hope other will find this useful too! Really hope to receive comments about it
 
 Big thanks to [pedroocava](https://github.com/pedrocava/) and [kimjoaoun](https://github.com/kimjoaoun/) for their early comments on this matter. Any mistakes are my own.
 
+These functions were much improved by the feedback and suggestions of [Giuliano Sposito](https://github.com/giulsposito).
+
 # Important to note
 
 As I am an Economics PhD Student, I do not have the time, nor the skills, to make a hardcore low level coding in C++ to create super fast functions as is in the `purrr` package. Nonetheless, I still think this functions I presented perfom quite well, since I kept them simple and based in the `purrr` package. I already set an [issue](https://github.com/tidyverse/purrr/issues/797#issue-721645404) in the `purrr` Github repository today. If they add this feature in the `purrr` package, **what I hope they do**, I will not take this project forward or update it in anyway.

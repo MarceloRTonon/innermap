@@ -3,3 +3,7 @@
 ^LICENSE\.md$
 ^Innermap\.Rmd$
 ^README\.Rmd$
+^tests
+^shadow_scripts
+^benchmark\.Rmd$
+^benchmark\.md$

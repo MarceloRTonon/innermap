@@ -141,6 +141,9 @@ Big thanks to [pedroocava](https://github.com/pedrocava/) and
 [kimjoaoun](https://github.com/kimjoaoun/) for their early comments on
 this matter. Any mistakes are my own.
 
+These functions were much improved by the feedback and suggestions of
+[Giuliano Sposito](https://github.com/giulsposito).
+
 # Important to note
 
 As I am an Economics PhD Student, I do not have the time, nor the

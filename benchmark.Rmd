@@ -1,0 +1,265 @@
+---
+title: "innermap: development and benchmarking"
+author: "Marcelo Tonon"
+date: "16/10/2020"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# A Development Journal
+
+As the title spells out, here will be presented how the `innermap` package was developed, showing how the different versions of the functions presented in the package perfom. Until now, there were three versions of the package, being that the second one was not published, as we will explain futher. The third version is the current one, and it uses only the `purrr` package. In the path of the development, I own a lot to [Giuliano Sposito](https://github.com/giulsposito), and also to my great sock friend [Pedro Cava](https://github.com/pedrocava), for giving me advice in how to develop it better, and also for pointing to the possibility of the better perfomance of a `seqApply`^[The function Giuliano Sposito proposed was called `leadApply` since it used the function `dplyr::lead`, but as the base R function perfom better, made no sense to called `leadApply`. **Important** to say that he also said that moving to a base-R structure would have a better perfomance.]. Obviously, all eventual mistakes are my own!
+
+Packages needed
+
+```{r loadlib, warning=F}
+library(purrr)
+library(dplyr)
+library(microbenchmark)
+library(plyr)
+library(rlang)
+```
+
+
+# The early, clumsy, approach to the problem.
+
+The first version of `innermap` was structured in the following fashion:
+
+```{r}
+innermap_V1 <- function(input, .f0, distance = 1){
+  .output <- purrr::map2(c(1:(length(input)-distance)), c((1+distance):length(input)),
+                  function(x1,x2) rlang::exec(.f0, input[[x1]], input[[x2]])
+  )
+  return(.output)
+}
+```
+
+ All the `innermap` function family was structured like this. As one can notice, this version used the `rlang` package.
+ 
+ # Changing due to feedbacks!
+ 
+The early version of the `innermap` package was nothing more then an more abstracted form of the way I always used `map2` when working with Input-Output Tables and Structural Decomposition Analysis. As I never had received any feedback or criticism for that, I did not though of any other way for doing this. When I published the package, I was then presented, by pedrocava and giulsposito to the `dplyr::lead` function, and so I created a new version of `innermap`:
+
+```{r}
+innermap_V2 <- function(input, .f0, distance = 1){
+  .output <- purrr::map2(input,
+                         dplyr::lead(input, distance),
+                         .f0
+                         )[c(1:(length(input)-distance))]
+  return(.output)
+}
+```
+
+This version did not used `rlang::exec`, but used `dplyr::lead`.
+
+### leadApply for atomic vectors
+
+As said in README, the main motivation to create `innermap` was for dealing with lists of matrices and data.frames. But for the sake of simplicity^[Also, no idea for an simple matrix example came to mind at that moment.], the first example I gave in the first publication of the package was of `innermap` dealing with atomic vectors. Giuliano Sposito then graciously [appeared](https://twitter.com/gsposito/status/1316597825233465345?s=20) and using benchmark said that for atomic vectors there was a better way:
+
+```{r}
+leadApply <- function(input, .f0, distance =1){
+  .f0(input,
+      dplyr::lead(input, distance)
+      )[1:(length(input)-distance)]
+}
+```
+
+This is certainly true. Let's compare how the three structures behave in comparison:
+
+```{r}
+inputVec <- 1:100000
+
+innermap_dbl_V1  <- function(input, .f0, distance = 1){
+  .output <- purrr::map2_dbl(c(1:(length(input)-distance)), c((1+distance):length(input)),
+                  function(x1,x2) rlang::exec(.f0, input[[x1]], input[[x2]])
+  )
+  return(.output)
+}
+
+innermap_dbl_V2 <- function(input, .f0, distance = 1){
+  .output <- purrr::map2_dbl(input,
+                         dplyr::lead(input, distance),
+                         .f0
+                         )[c(1:(length(input)-distance))]
+  return(.output)
+}
+
+microbenchmark(
+  "innermap_dbl_V1" = {innermap_dbl_V1(inputVec, `+`, 5)},
+  "innermap_dbl_V2" = {innermap_dbl_V2(inputVec, `+`, 5)},
+  "leadApply" = {leadApply(inputVec, `+`, 5)},
+  times =30
+)
+```
+
+The desavantage of `leadApply` is that it does not support vectors or formula in `.f0` as `innermap` does. But it does support anonymous function. It must be said that it will return an error if the function choosed returns an vector with length higher then 1.
+
+```{r}
+inputVec2 <- 1:100
+
+
+microbenchmark(
+  "innermap_V1" = {innermap_V1(inputVec2, `+`, 20)},
+  "innermap_V2" = {innermap_V2(inputVec2, `+`, 20)},
+  times =30
+)
+```
+
+
+As we can see giulsposito was right, and `leadApply` clearly perfoms way better than `innermap_dbl_V1` or `innermap_dbl_V2`. We can see also that  `innermap_dbl_V2` perfomed significantly better than `innermap_dbl_V1`. We can also see that all of them deliver the same result:
+
+```{r}
+all.equal(innermap_dbl_V1(inputVec, `+`, 5),
+          innermap_dbl_V2(inputVec, `+`, 5))
+all.equal(innermap_dbl_V1(inputVec, `+`, 5),
+          leadApply(inputVec, `+`, 5))
+```
+
+This holds for any suffix of `innermap` that takes  an `atomic vector` as input. But as we are going to see, this does not holds  for a list of matrices.
+
+### Problems in a lead paradise
+
+The *V2* of this problem was never published as the current one. This was because of their worse perfomance relative to the their previous version when operating a matrix.
+
+Examples:
+```{r}
+MatrixList <- ozone %>% plyr::alply(3)
+
+microbenchmark("V1" = {innermap_V1(MatrixList, `/`, 3)},
+               "V2" = {innermap_V2(MatrixList, `/`, 3)},
+               times = 30)
+```
+
+Cell by cell multiplication:
+```{r}
+microbenchmark("V1" = {innermap_V1(MatrixList, `*`, 3)},
+               "V2" = {innermap_V2(MatrixList, `*`, 3)},
+               times = 30)
+```
+
+
+Standard Matrix Multiplications
+```{r}
+microbenchmark("V1" = {innermap_V1(MatrixList, crossprod, 3)},
+               "V2" = {innermap_V2(MatrixList, crossprod, 3)},
+               times = 30)
+```
+
+```{r}
+microbenchmark("V1" = {innermap_V1(MatrixList, `+`, 3)},
+               "V2" = {innermap_V2(MatrixList, `+`, 3)},
+               times = 30)
+
+```
+
+```{r}
+innermap_lgl_V1  <- function(input, .f0, distance = 1){
+  .output <- purrr::map2_lgl(c(1:(length(input)-distance)), c((1+distance):length(input)),
+                  function(x1,x2) rlang::exec(.f0, input[[x1]], input[[x2]])
+  )
+  return(.output)
+}
+
+innermap_lgl_V2 <- function(input, .f0, distance = 1){
+  .output <- purrr::map2_lgl(input,
+                         dplyr::lead(input, distance),
+                         .f0
+                         )[c(1:(length(input)-distance))]
+  return(.output)
+}
+
+
+microbenchmark("V1" = {innermap_lgl_V1(MatrixList, identical, 3)},
+               "V2" = {innermap_lgl_V2(MatrixList, identical, 3)},
+               times = 30)
+```
+
+## A base-R subsetting structure (The current structure)
+
+In this version I took away `lead` in favour of a base-r solution for the subsetting of the lists. This was also another one of the [Giuliano Sposito's recomendations](https://twitter.com/gsposito/status/1316599096833118208?s=20). This structure was then like this:
+
+```{r}
+
+innermap_V3 <- function(input, .f0, distance = 1){
+  .output <- purrr::map2(input[c(1:(length(input)-distance))],
+                         input[c((1+distance):length(input))],
+                         .f0)
+  return(.output)
+}
+```
+
+The perfomance of this structure compared to the formers:
+
+```{r}
+microbenchmark("V1" = {innermap_V1(MatrixList, `/`, 3)},
+               "V2" = {innermap_V2(MatrixList, `/`, 3)},
+               "V3" = {innermap_V3(MatrixList, `/`, 3)},
+               times = 30)
+```
+
+```{r}
+microbenchmark("V1" = {innermap_V1(MatrixList, crossprod, 3)},
+               "V2" = {innermap_V2(MatrixList, crossprod, 3)},
+               "V3" = {innermap_V3(MatrixList, crossprod, 3)},
+               times = 30)
+```
+
+```{r}
+microbenchmark("V1" = {innermap_V1(MatrixList, `+`)},
+               "V2" = {innermap_V2(MatrixList, `+`)},
+               "V3" = {innermap_V3(MatrixList, `+`)},
+               times = 30)
+```
+
+```{r}
+innermap_lgl_V3 <- function(input, .f0, distance = 1){
+  .output <- purrr::map2_lgl(input[c(1:(length(input)-distance))],
+                         input[c((1+distance):length(input))],
+                         .f0)
+  return(.output)
+}
+
+
+microbenchmark("V1" = {innermap_lgl_V1(MatrixList, identical, 1)},
+               "V2" = {innermap_lgl_V2(MatrixList, identical, 1)},
+               "V3" = {innermap_lgl_V3(MatrixList, identical, 1)},
+               times = 30)
+```
+
+These improvements happened because of three things:
+
+  . The structure of `V1` used the lengths of the `input` as `.x` e `.y` in `map2()` and subsetted `input` inside the `rlang::exec`. Now is the input itself that is used. In the end, `V3` has a similar structure of `V2`, **but**;
+  . `V2` uses `dplyr::lead` instead of `baser`, that is what `V3` uses. The difference in perfomance is apparent when we deal with lists:
+```{r}
+exampleDist <- 2
+
+microbenchmark(
+"lead" = ({lead(MatrixList, exampleDist)}),
+"baseR"= MatrixList[c((1+exampleDist):length(MatrixList))]
+)
+```
+  . `innermap_V2(input, .f0, distance)` runs `map2` a total of `length(input)` times and then subset it with `[c(1:(length(input)-distance))]`. The total of times `innermap_V3(input, .f0, distance)` runs `map2` equals `length(input) - distance`. This happens because `dplyr::lead(input)` keep the same length of `input` while  `innermap_V3` modifies the lenght of `input` as it serves as `.x` and `.y` parameter for `map2`.
+  
+  
+### Retiring leadApply
+  
+We have retired `leadApply` and transformed it in `innerApply``, since the latter perfoms way better.
+
+```{r}
+innerApply <- function(input, .f0, distance =1){
+  .f0(input[c(1:(length(input)-distance))],
+      input[c((1+distance):length(input))]
+      )
+}
+
+microbenchmark(
+  "leadApply" = {leadApply(inputVec, `+`, 5)},
+  "innerApply" = {innerApply(inputVec, `+`, 5)},
+  times =30
+)
+```
+
+
