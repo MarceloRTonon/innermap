@@ -16,7 +16,7 @@
 #'    This syntax allows you to create very compact anonymous functions. Note that formula functions conceptually take dots (that's why you can use `..1` etc). They silently ignore additional arguments that are not used in the formula expression.
 #' @param distance The distance between each element of the vector. The default value is 1.
 #'
-#' @seealso [innerApply()] for applying a function to sequentional elements of an atomic vector, is way more faster than any element of the innermap family.
+#' @seealso \code{\link{innermap::innerApply()}} for applying a function to sequentional elements of an atomic vector, is way more faster than any element of the innermap family.
 #'
 #'
 #' @return

@@ -262,4 +262,6 @@ microbenchmark(
 )
 ```
 
+## Whats next?
 
+Well, for now not that much. Test in the future use `as_mapper` directly and see if we gain more perfomance in this matter. Writing C/C++ is not in my plans. I also want to focus in other packages that would help Input Output Analysis (Structural Decomposition in special) in R.

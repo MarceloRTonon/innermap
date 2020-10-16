@@ -83,5 +83,5 @@ innermap_chr(function(x,y) all.equal(x,y)[1], distance =2)
 
 }
 \seealso{
-[innerApply()] for applying a function to sequentional elements of an atomic vector, is way more faster than any element of the innermap family.
+\code{\link{innermap::innerApply()}} for applying a function to sequentional elements of an atomic vector, is way more faster than any element of the innermap family.
 }
