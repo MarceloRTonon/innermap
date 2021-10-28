@@ -18,7 +18,7 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 <!-- badges: end -->
 
-The `innermap` package presents the `innermap` family functions. These in turn, allow the use of map family function but using elements of the same vectors. This is not the same thing of `purrr::accumulate` function, since it does not uses any output made by the function in the process.
+The `innermap` package presents the `innermap` family functions. These in turn, allow the use of map family function but using elements of the same vectors. This is not the same thing of `purrr::accumulate` function, since it does not uses any output made by the function in the process. Now, we also present  2 `bimap` (bilinear map) functions, that extend the same functionality of `purrr::map_depth` for `map2`.
 
 ## Installation
 
@@ -29,61 +29,255 @@ You can install the development version from [GitHub](https://github.com/) with:
 devtools::install_github("MarceloRTonon/innermap")
 ```
 
-
+# The innermap function
 
 ## Example
 
-Making an simple example:
-
 ```{r}
 library(innermap)
-
+library(purrr)
 ```
 
+Bellow we offer a simple example. Important to notice that when dealing with atomic vectors one could use `apply` instead of `purrr` functions, however, the latter offer a greater flexebility with the inputs, specially when dealing with nested lists which the last elements have `matrix` class.
 
-
-```{r}
-inputVec <- c(1:30)
-
-inputVec
+```{r, eval=TRUE, include=TRUE}
+inputList <- c(1:30) |>
+  as.list() |>
+  purrr::map(rep, 9) |>
+  purrr::map(matrix, nrow = 3, ncol =3)
 ```
 
-Now suppose you want to sum every element of the `inputVec` vector with the following one. Using `base r` you would have to do:
-
+Now suppose you want to sum every matrix of the `inputLest` with the following one. Using `base R`, a intuitive way of doing this is through `for` (we discuss in other possibilities using `base R`):
 
 ```{r}
-outputVec <- vector(mode = "double",
-                    length = (length(inputVec)-1)
-                    )
+#1: For Method
+outputListFor <- list()
 
-for(i in seq_along(inputVec)){
-  outputVec[i] <- inputVec[i] + inputVec[i+1]
+for(i in 1:(length(inputList)-1)){
+  outputListFor[[i]] <- inputList[[i]] + inputList[[i+1]]
 }
 
-outputVec
 ```
 
-As we know, using `for` in R is neither very optimized or a good practice. It is possible to do this using the `purrr` package:
+Howver using `for` in R is neither very optimized or a good practice. In this sense, the `innermap` function family produce strong elements 
 
 ```{r}
-library(purrr)
+outputList <- innermap::innermap(inputList, function(x,y) x+y)
 
-outputVec <- purrr::map2_dbl(c(1:(length(inputVec)-1)),
-                     c(2:length(inputVec)),
-                     function(x,y) inputVec[x] + inputVec[y])
-
-outputVec
+all.equal(outputList, outputListFor)
 ```
+
+The function `innermap::innermap` is built upon the `package`
+
+### Changing the distance between the elements used
+
+In this case, we used each element with the following one, **but** we can also use it with different distances, using the argument `distance`. Supposing we want to multiply the `n` element with the `n+2` element we can do:
+
+```{r}
+outputList <- innermap::innermap(inputList, distance =2, function(x,y) x+y)
+```
+
+The default value for the `distance` argument 1.
+
+
+## The simple inner structure of innermap
+
+
+
+
+### Comparing with Alternate methods {#benchAltDis}
+
+ 
+ We could however use `lapply`, using two methods. The first is creating a list containing indexes of `.x` and `.y`:
+
+```{r, eval=FALSE}
+# 2_a: Lapply Index Method
+outputList <- list(.x = as.list(c(1:(length(inputList)-1))),
+                   .y = as.list(c(2:length(inputList)))) |>
+                     purrr::transpose() |>
+                     lapply(FUN = function(.index) inputList[[.index$.x]]+inputList[[.index$.y]])
+```
+
+Another way is to attribute directly the variables in the list:
+
+```{r, eval=FALSE}
+# 2_b: Lapply Subset Method
+outputList <- list(.x = inputList[c(1:(length(inputList)-1))],
+                          .y = inputList[c(2:length(inputList))]) |>
+  purrr::transpose() |>
+  lapply(FUN = function(.input) .input$.x+ .input$.y)
+```
+
+It is possible to do this using the `purrr` package by, at least, four ways: 2 using `map` and 2 using `map2`.  As for `lapply`, we can use an _Index Method_, where the indexes are given as `.x` and `.y` parameters for `map` and `map2`, and the input vector is given inside the function in the `.f` argument:
+
+```{r, eval=FALSE}
+#3_a Purrr::map Index Method
+outputList <- list(as.list(c(1:(length(inputList)-1))),
+                   as.list(c(2:length(inputList)))) |>
+  purrr::transpose() |>
+  map(.f = function(x) inputList[[x[[1]]]]+ inputList[[x[[2]]]])
+
+
+
+#4_a: Purrr::map2 Index Method
+outputList <- purrr::map2(.x = c(1:(length(inputList)-1)),
+                     .y = c(2:length(inputList)),
+                     .f = function(x,y) inputList[[x]] + inputList[[y]])
+```
+
+The second can be through subsetting the 
+```{r, eval=FALSE}
+#3_b: purrr::map Subset Method with purrr::reduce
+outputList <- list(.x = inputList[c(1:(length(inputList)-1))],
+                          .y = inputList[c(2:length(inputList))]) |>
+  purrr::transpose() |>
+  map(.f = reduce, `+`)
+
+
+#4_b: Purrr::map2 Subset Method
+outputList <- purrr::map2(.x = inputList[c(1:(length(inputList)-1))],
+                          .y = inputList[c(2:length(inputList))],
+                          .f = `+`)
+```
+
+To say the truth when using `map`, there is another choice to be made: using `purrr::reduce` or not. There is consequence in using it, as we shall discuss latter. Bellow we present a tabble using the `microbenchmark` package. The code for the benchmark can be seen in the end of this document
+
+```{r echo=FALSE}
+library(microbenchmark)
+
+bench <- microbenchmark::microbenchmark(
+
+    "1_For" = {outputList <- list()
+    for(i in 1:(length(inputList)-1)){
+  outputList[[i]] <- inputList[[i]] + inputList[[i+1]]
+}},
+
+  "2a_lapplyIndex" = {list(.x = as.list(c(1:(length(inputList)-1))),
+                   .y = as.list(c(2:length(inputList)))) |>
+                     purrr::transpose() |>
+                     lapply(FUN = function(.index) inputList[[.index$.x]]+inputList[[.index$.y]])},
+  "2a2_lapplyIndex" = {list(.x = as.list(c(1:(length(inputList)-1))),
+                   .y = as.list(c(2:length(inputList)))) |>
+                     purrr::transpose() |>
+                     lapply(FUN = function(.index, .f0 = `+`, ...) .f0(inputList[[.index$.x]],inputList[[.index$.y]],...))},
+
+
+  "2b_lapplySubset" = { list(.x = inputList[c(1:(length(inputList)-1))],
+                          .y = inputList[c(2:length(inputList))]) |>
+  purrr::transpose() |>
+  lapply(FUN = function(.input) .input$.x+ .input$.y)},
+  "2b2_lapplySubset" = { list(.x = inputList[c(1:(length(inputList)-1))],
+                          .y = inputList[c(2:length(inputList))]) |>
+  purrr::transpose() |>
+  lapply(FUN = function(.input, .f0 = `+`,...) .f0(.input$.x, .input$.y,...))},
+
+
+  "3a_mapIndex" = {list(as.list(c(1:(length(inputList)-1))),
+                   as.list(c(2:length(inputList)))) |>
+  purrr::transpose() |>
+  map(.f = function(x) inputList[[x[[1]]]]+ inputList[[x[[2]]]])},
+ 
+  "3a2_mapIndex" = {list(as.list(c(1:(length(inputList)-1))),
+                   as.list(c(2:length(inputList)))) |>
+  purrr::transpose() |>
+  map(.f = function(x, .f0 = `+`, ...) .f0(inputList[[x[[1]]]], inputList[[x[[2]]]],...))},
+  "3aReduce_mapIndex" = { {list(as.list(c(1:(length(inputList)-1))),
+                   as.list(c(2:length(inputList)))) |>
+  purrr::transpose() |>
+  map(.f = function(.index)purrr::reduce(list(inputList[[.index[[1]]]],
+                                              inputList[[.index[[2]]]]),
+                                         `+`))}},
+  "3b_mapSubset" = {list(.x = inputList[c(1:(length(inputList)-1))],
+                          .y = inputList[c(2:length(inputList))]) |>
+  purrr::transpose() |>
+  map(.f = function(x) x[[1]]+x[[2]])},
+  "3b2_mapSubset" = {list(.x = inputList[c(1:(length(inputList)-1))],
+                          .y = inputList[c(2:length(inputList))]) |>
+  purrr::transpose() |>
+  map(.f = function(x, .f0 = `+`, ...) .f0(x[[1]],x[[2]], ...))},
+  "3bReduce_mapSubset" = {list(.x = inputList[c(1:(length(inputList)-1))],
+                          .y = inputList[c(2:length(inputList))]) |>
+  purrr::transpose() |>
+  map(.f = reduce, `+`)},
+
+  "4a_map2Index" = {purrr::map2(.x = c(1:(length(inputList)-1)),
+                     .y = c(2:length(inputList)),
+                     .f = function(x,y) inputList[[x]] + inputList[[y]])},
+  "4a2_map2Index" = {purrr::map2(.x = c(1:(length(inputList)-1)),
+                     .y = c(2:length(inputList)),
+                     .f = function(x,y, .f0 = `+`, ...) .f0(inputList[[x]],inputList[[y]],...))},
+  "4b_map2Subset" = {purrr::map2(.x = inputList[c(1:(length(inputList)-1))],
+                          .y = inputList[c(2:length(inputList))],
+                          `+`)},
+  "4b2_map2Subset" = {purrr::map2(.x = inputList[c(1:(length(inputList)-1))],
+                          .y = inputList[c(2:length(inputList))],
+                          .f = function(x,y,.f0 =  `+`, ...) .f0(x,y,...))},
+      "4Formula_map2Index" = {purrr::map2(.x = c(1:(length(inputList)-1)),
+                     .y = c(2:length(inputList)),
+                     .f = ~ inputList[[.x]]+inputList[[.y]])},
+  "5_mapmap2" = {list(.x = inputList[c(1:(length(inputList)-1))],
+                          .y = inputList[c(2:length(inputList))]) |>
+  purrr::transpose() |>
+  map(function(x) map2( .x = x$.x, .y = x$.y,  `+`))},
+
+"innermap" = innermap::innermap(inputList, .f0 = `+`),
+  "innerLapply" = innerLapply(inputList, `+`),
+ times= 100L
+) 
+
+bench |> print()
+```
+
+From the table above we can draw some pretty sweet conclusions:
+  - Using `for` is very ineficient.
+  - Using `reduce` inside `purrr::map` is also very ineficient (even more than for)
+  - `lapply` is faster then `purrr::map` and `purrr::map2`
+  - `innerLapply` is faster than `innermap`
+
+We now select only those results that can be generalized and are not strongly inneficient:
+
+```{r}
+bench2 <- microbenchmark::microbenchmark(
+    "2a2_lapplyIndex" = {list(.x = as.list(c(1:(length(inputList)-1))),
+                   .y = as.list(c(2:length(inputList)))) |>
+                     purrr::transpose() |>
+                     lapply(FUN = function(.index, .f0 = `+`, ...) .f0(inputList[[.index$.x]],inputList[[.index$.y]],...))},
+    
+  "2b2_lapplySubset" = { list(.x = inputList[c(1:(length(inputList)-1))],
+                          .y = inputList[c(2:length(inputList))]) |>
+  purrr::transpose() |>
+  lapply(FUN = function(.input, .f0 = `+`,...) .f0(.input$.x, .input$.y,...))},
+  
+    "3a2_mapIndex" = {list(as.list(c(1:(length(inputList)-1))),
+                   as.list(c(2:length(inputList)))) |>
+  purrr::transpose() |>
+  map(.f = function(x, .f0 = `+`, ...) .f0(inputList[[x[[1]]]], inputList[[x[[2]]]],...))},
+
+  "3b2_mapSubset" = {list(.x = inputList[c(1:(length(inputList)-1))],
+                          .y = inputList[c(2:length(inputList))]) |>
+  purrr::transpose() |>
+  map(.f = function(x, .f0 = `+`, ...) .f0(x[[1]],x[[2]], ...))},
+
+    "4a2_map2Index" = {purrr::map2(.x = c(1:(length(inputList)-1)),
+                     .y = c(2:length(inputList)),
+                     .f = function(x,y, .f0 = `+`, ...) .f0(inputList[[x]],inputList[[y]],...))},
+      "4aFormula_map2Index" = {purrr::map2(.x = c(1:(length(inputList)-1)),
+                     .y = c(2:length(inputList)),
+                     .f = ~ inputList[[.x]]+inputList[[.y]])},
+  "innerLapply" = innerLapply(inputList, `+`),
+  "innerLapply2" = innerLapply(inputList, function(x,y) x+y),
+
+   times= 800L
+)
+
+bench2 |> print()
+```
+
+`innerLapply` is more restrictive then `innermap`, since it was built upon `lapply` and not `map`. In this sense it does not make any use of `pluck` and does not support functions written as formula.
 
 But one can easily argue that writing explicitly the lengths of the vector in the arguments is at least very anoying, when very confusing to read. The `innermap` approach do the same thing that was done in the example prior, but in the backstage. Let's use `innermap_dbl` in this example:
 
 
-```{r}
-
-outputVec <- innermap::innermap_dbl(inputVec, function(x,y) x+y)
-
-outputVec
-```
 
 It is undoubtely more pratical to do this than it is to do the former way. This also allows you to be even more pratical:
 
@@ -93,22 +287,12 @@ outputVec <- innermap::innermap_dbl(inputVec, sum)
 outputVec <- innermap::innermap_dbl(inputVec, `+`)
 ```
 
-# Changing the distance between the elements used
 
-In this case, we used each element with the following one, **but** we can also use it with different distances, using the argument `distance`. Supposing we want to multiply the `n` element with the `n+2` element we can do:
-
-```{r}
-
-outputVec2 <- innermap::innermap_dbl(inputVec, `*`, distance = 2)
-
-outputVec2
-```
-
-The default distance between the elements is set to be one.
 
 # A whole family
 
 We used until now the `innermap_dbl` function, but in the same way we have `map`, `map_lgl`, `map_chr`,`map_int`, `map_raw`, `map_dfr`, `map_dfc` there is a `innermap`, `innermap_lgl`, `innermap_chr`,`innermap_int`, `innermap_dbl`, `innermap_raw`, `innermap_dfr`, `innermap_dfc`.
+
 
 
 
@@ -118,6 +302,63 @@ There is no native function in `purrr` that takes elements of the same vector or
 
 I hope other will find this useful too! Really hope to receive comments about it! 
 
+# Appendix
+
+## microbenchmark Code
+
+We display below the code used to generate the microbenchmark of the options
+```{r, eval= FALSE, include=TRUE}
+library(microbenchmark)
+
+microbenchmark::microbenchmark(
+
+    "1_For" = {outputList <- list()
+    for(i in 1:(length(inputList)-1)){
+  outputList[[i]] <- inputList[[i]] + inputList[[i+1]]
+}},
+
+  "2a_lapplyIndex" = {list(.x = as.list(c(1:(length(inputList)-1))),
+                   .y = as.list(c(2:length(inputList)))) |>
+                     purrr::transpose() |>
+                     lapply(FUN = function(.index) inputList[[.index$.x]]+inputList[[.index$.y]])},
+
+  "2b_lapplySubset" = { list(.x = inputList[c(1:(length(inputList)-1))],
+                          .y = inputList[c(2:length(inputList))]) |>
+  purrr::transpose() |>
+  lapply(FUN = function(.input) .input$.x+ .input$.y)},
+
+  "3a1_mapIndex" = {list(as.list(c(1:(length(inputList)-1))),
+                   as.list(c(2:length(inputList)))) |>
+  purrr::transpose() |>
+  map(.f = function(x) inputList[[x[[1]]]]+ inputList[[x[[2]]]])},
+ 
+  "3aReduce_mapIndex" = { {list(as.list(c(1:(length(inputList)-1))),
+                   as.list(c(2:length(inputList)))) |>
+  purrr::transpose() |>
+  map(.f = function(.index)purrr::reduce(list(inputList[[.index[[1]]]],
+                                              inputList[[.index[[2]]]]),
+                                         `+`))}},
+  "3b_mapSubset" = {list(.x = inputList[c(1:(length(inputList)-1))],
+                          .y = inputList[c(2:length(inputList))]) |>
+  purrr::transpose() |>
+  map(.f = function(x) x[[1]]+x[[2]])},
+  "3bReduce_mapSubset" = {list(.x = inputList[c(1:(length(inputList)-1))],
+                          .y = inputList[c(2:length(inputList))]) |>
+  purrr::transpose() |>
+  map(.f = reduce, `+`)},
+
+  "4a_map2Index" = {purrr::map2(.x = c(1:(length(inputList)-1)),
+                     .y = c(2:length(inputList)),
+                     .f = function(x,y) inputList[[x]] + inputList[[y]])},
+
+  "4b_map2Subset" = {purrr::map2(.x = inputList[c(1:(length(inputList)-1))],
+                          .y = inputList[c(2:length(inputList))],
+                          .f = `+`)},
+
+"innermap" = innermap::innermap(inputList, .f0 = `+`),
+ times= 100L
+)
+```
 # Thanks
 
 Big thanks to [pedroocava](https://github.com/pedrocava/) and [kimjoaoun](https://github.com/kimjoaoun/) for their early comments on this matter. Any mistakes are my own.

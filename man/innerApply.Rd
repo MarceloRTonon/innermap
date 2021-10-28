@@ -17,7 +17,7 @@ innerApply(input, .f0, distance = 1)
 An atomic vector of length equals length(input)-distance.
 }
 \description{
-#' The innerApply function applies a function to an atomic vector using two of its elements in sequence as inputs. It is different from [purrr::accumulate()] since it does not use any of its output as an input.
+#' The innerApply function applies a function to an atomic vector using two of its elements in sequence as inputs. It is different from purrr::accumulate since it does not use any of its output as an input.
 }
 \details{
 If the function used as .f0 returns a vector of length higher than 1, the function will throw an error.

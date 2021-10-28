@@ -11,7 +11,7 @@
 \alias{innermap_dfc}
 \title{Apply a function to a list or atomic vector using its two elements each time}
 \usage{
-innermap(input, .f0, distance = 1)
+innermap(input, .f0, distance = 1, .names = "after")
 
 innermap_lgl(input, .f0, distance = 1)
 
@@ -83,5 +83,5 @@ innermap_chr(function(x,y) all.equal(x,y)[1], distance =2)
 
 }
 \seealso{
-\code{\link{innermap::innerApply()}} for applying a function to sequentional elements of an atomic vector, is way more faster than any element of the innermap family.
+\code{\link{innerApply}} for applying a function to sequentional elements of an atomic vector, is way more faster than any element of the innermap family.
 }

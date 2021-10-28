@@ -16,7 +16,7 @@
 #'    This syntax allows you to create very compact anonymous functions. Note that formula functions conceptually take dots (that's why you can use `..1` etc). They silently ignore additional arguments that are not used in the formula expression.
 #' @param distance The distance between each element of the vector. The default value is 1.
 #'
-#' @seealso \code{\link{innermap::innerApply()}} for applying a function to sequentional elements of an atomic vector, is way more faster than any element of the innermap family.
+#' @seealso \code{\link{innerApply}} for applying a function to sequentional elements of an atomic vector, is way more faster than any element of the innermap family.
 #'
 #'
 #' @return
@@ -56,10 +56,14 @@
 #' @export
 #'
 #'
-innermap <- function(input, .f0, distance = 1){
+innermap <- function(input, .f0, distance = 1,  ...){
+
+
   .output <- purrr::map2(input[c(1:(length(input)-distance))],
                          input[c((1+distance):length(input))],
-                         .f0)
+                         .f0, ...)
+
+
   return(.output)
 }
 
@@ -67,7 +71,7 @@ innermap <- function(input, .f0, distance = 1){
 #' @rdname innermap
 #' @export
 #'
-innermap_lgl <- function(input, .f0, distance = 1){
+innermap_lgl <- function(input, .f0, distance = 1, ...){
   .output <- purrr::map2_lgl(input[c(1:(length(input)-distance))],
                              input[c((1+distance):length(input))],
                              .f0)
@@ -79,7 +83,7 @@ innermap_lgl <- function(input, .f0, distance = 1){
 #' @export
 #'
 
-innermap_int <- function(input, .f0, distance = 1){
+innermap_int <- function(input, .f0, distance = 1, ...){
   .output <- purrr::map2_int(input[c(1:(length(input)-distance))],
                              input[c((1+distance):length(input))],
                              .f0)

@@ -1,6 +1,6 @@
 #' Apply a function to an atomic vector using its two elements each time
 #'
-#'#' The innerApply function applies a function to an atomic vector using two of its elements in sequence as inputs. It is different from [purrr::accumulate()] since it does not use any of its output as an input.
+#'#' The innerApply function applies a function to an atomic vector using two of its elements in sequence as inputs. It is different from purrr::accumulate since it does not use any of its output as an input.
 #'
 #' @param input An atomic vector.
 #' @param .f0 A function. Anonymous functions are supported. Formula or vectors are not.
